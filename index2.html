@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard AVM — Estimador de precio de vivienda</title>
+<meta name="description" content="Dashboard de apoyo a la decisión inmobiliaria: AVM, plusvalía y tendencia SHF.">
+</head>
+<body>
+
+<style>
+h2.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+*{box-sizing:border-box;margin:0;padding:0}
+.tabs{display:flex;gap:2px;border-bottom:0.5px solid var(--border);margin-bottom:1.25rem;flex-wrap:wrap}
+.tab{padding:7px 14px;font-size:13px;background:none;border:none;color:var(--text-secondary);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.tab.active{color:var(--text-primary);border-bottom-color:var(--text-primary);font-weight:500}
+.panel{display:none}.panel.active{display:block}
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:8px;margin-bottom:1.1rem}
+.metric{background:var(--surface-1);border-radius:var(--radius);padding:11px 13px}
+.metric-label{font-size:11px;color:var(--text-secondary);margin-bottom:3px}
+.metric-val{font-size:19px;font-weight:500}
+.metric-sub{font-size:10px;color:var(--text-muted);margin-top:2px}
+.card{background:var(--surface-2);border:0.5px solid var(--border);border-radius:12px;padding:.9rem 1.1rem;margin-bottom:.9rem}
+.card-title{font-size:13px;font-weight:500;margin-bottom:.8rem;color:var(--text-primary)}
+label{display:block;font-size:12px;color:var(--text-secondary);margin-bottom:3px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px}
+input[type=number],input[type=text],select{width:100%;font-size:13px}
+input[type=range]{width:100%}
+.btn-primary{width:100%;margin-top:4px;padding:9px;font-size:13px;font-weight:500;background:var(--text-primary);color:var(--surface-2);border:none;border-radius:var(--radius);cursor:pointer}
+.btn-primary:active{opacity:.85}
+.result-panel{display:none;margin-top:10px}
+.result-hero{background:var(--surface-1);border-radius:12px;padding:16px 18px;margin-bottom:8px}
+.result-precio{font-size:30px;font-weight:500;color:var(--text-primary)}
+.result-sub{font-size:12px;color:var(--text-secondary);margin-top:3px}
+.result-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px}
+.result-card{border-radius:var(--radius);padding:10px 12px}
+.result-card.val{background:var(--bg-success)}
+.result-card.crec{background:var(--bg-accent)}
+.result-card.warn{background:var(--bg-warning)}
+.result-card .rc-label{font-size:10px;margin-bottom:2px}
+.result-card.val .rc-label{color:var(--text-success)}
+.result-card.crec .rc-label{color:var(--text-accent)}
+.result-card.warn .rc-label{color:var(--text-warning)}
+.result-card .rc-val{font-size:17px;font-weight:500}
+.result-card.val .rc-val{color:var(--text-success)}
+.result-card.crec .rc-val{color:var(--text-accent)}
+.result-card.warn .rc-val{color:var(--text-warning)}
+.warn-box{background:var(--bg-warning);border:0.5px solid var(--border-warning);border-radius:var(--radius);padding:8px 11px;font-size:11px;color:var(--text-warning);margin-top:8px}
+.bar-row{display:flex;align-items:center;gap:6px;margin-bottom:5px;font-size:11px}
+.bar-label{color:var(--text-secondary);width:148px;flex-shrink:0;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-track{flex:1;background:var(--surface-1);border-radius:3px;height:11px;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px}
+.bar-val{color:var(--text-primary);font-weight:500;min-width:44px;font-size:11px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modelo-row{display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr;gap:5px;font-size:11px;padding:7px 0;border-bottom:0.5px solid var(--border);align-items:center}
+.modelo-row.header{font-weight:500;color:var(--text-secondary)}
+.best-row{background:var(--bg-success);border-radius:var(--radius);padding:7px 8px}
+.badge-b{display:inline-block;font-size:10px;padding:1px 5px;border-radius:var(--radius);background:var(--bg-success);color:var(--text-success)}
+.low{color:var(--text-success)}.mid{color:var(--text-warning)}.high{color:var(--text-danger)}
+.map-wrap{position:relative;width:100%;background:var(--surface-1);border-radius:8px;overflow:hidden;min-height:280px}
+.map-toggle{display:flex;gap:4px;margin-bottom:8px}
+.map-toggle button{padding:5px 11px;font-size:11px;border:0.5px solid var(--border);border-radius:var(--radius);background:none;color:var(--text-secondary);cursor:pointer}
+.map-toggle button.active{background:var(--text-primary);color:var(--surface-2);border-color:var(--text-primary)}
+.legend-row{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:10px;color:var(--text-secondary)}
+.leg-grad{height:9px;width:100px;border-radius:3px}
+.mtooltip{position:absolute;background:var(--surface-2);border:0.5px solid var(--border-strong);border-radius:var(--radius);padding:8px 11px;font-size:11px;pointer-events:none;display:none;z-index:10;color:var(--text-primary);min-width:150px;line-height:1.6}
+.zm-pill{display:inline-block;padding:3px 9px;border-radius:var(--radius);font-size:11px;margin:2px;border:0.5px solid var(--border);color:var(--text-secondary);cursor:default}
+.coord-row{display:flex;gap:8px;margin-bottom:9px}
+.coord-row input{flex:1}
+.loc-indicator{display:none;font-size:11px;color:var(--text-accent);margin-top:4px}
+
+/* Mapa de ubicación */
+.location-map-card{margin-top:12px}
+#location-map{width:100%;height:520px;border-radius:10px;overflow:hidden;background:var(--surface-1)}
+.location-map-toolbar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.location-coords{font-size:11px;color:var(--text-secondary)}
+.btn-secondary{padding:6px 11px;font-size:11px;border:.5px solid var(--border);border-radius:var(--radius);background:none;color:var(--text-secondary);cursor:pointer}
+.btn-secondary:hover{background:var(--surface-1)}
+@media(max-width:700px){#location-map{height:400px}.result-grid{grid-template-columns:1fr}}
+
+/* ======== DISEÑO EJECUTIVO / REPORTE ======== */
+:root{
+  --bg-primary:#ffffff;--surface-1:#f4f5f7;--surface-2:#ffffff;--text-primary:#111827;--text-secondary:#6b7280;--text-muted:#9ca3af;--border:#e5e7eb;--border-strong:#cbd5e1;--bg-success:#e9f8f1;--text-success:#087f5b;--bg-accent:#edf4ff;--text-accent:#2563eb;--bg-warning:#fff7df;--text-warning:#a16207;--text-danger:#dc2626;--border-warning:#f0d27a;--radius:8px;
+  --report-bg:#f0f2f5;
+  --report-card:#ffffff;
+  --report-border:#e2e5ea;
+  --report-shadow:0 4px 24px rgba(15,23,42,.08);
+}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+body{font-family:'Inter',ui-sans-serif,system-ui,-apple-system,sans-serif}
+.tabs{position:sticky;top:0;z-index:30;background:var(--surface-2);padding-top:6px}
+.tab{transition:.2s ease}
+.tab:hover{color:var(--text-primary);background:var(--surface-1);border-radius:8px 8px 0 0}
+
+/* Shell principal */
+.report-shell{background:var(--report-bg);border-radius:0;padding:0;overflow:hidden}
+
+/* Header ejecutivo con degradado oscuro */
+.report-head{
+  background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 60%,#1d4ed8 100%);
+  padding:28px 28px 24px;
+  display:flex;justify-content:space-between;align-items:flex-start;gap:20px;
+  margin-bottom:0;
+  position:relative;overflow:hidden;
+}
+.report-head::before{
+  content:'';position:absolute;top:-60px;right:-60px;
+  width:220px;height:220px;border-radius:50%;
+  background:rgba(255,255,255,.04);pointer-events:none;
+}
+.report-head::after{
+  content:'';position:absolute;bottom:-80px;right:80px;
+  width:160px;height:160px;border-radius:50%;
+  background:rgba(99,179,237,.07);pointer-events:none;
+}
+.report-kicker{
+  text-transform:uppercase;letter-spacing:.12em;font-size:10px;font-weight:700;
+  color:rgba(147,197,253,1);margin-bottom:6px;
+}
+.report-title{font-size:26px;line-height:1.15;font-weight:800;margin:0 0 6px;color:#fff;letter-spacing:-.3px}
+.report-subtitle{font-size:12px;color:rgba(255,255,255,.6);max-width:600px;line-height:1.6}
+.report-actions{display:flex;gap:8px;flex-wrap:wrap;flex-shrink:0;margin-top:4px}
+.report-btn{
+  border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);
+  color:rgba(255,255,255,.9);border-radius:8px;padding:9px 16px;
+  font-size:12px;font-weight:600;cursor:pointer;backdrop-filter:blur(4px);
+  transition:all .2s ease;white-space:nowrap;
+}
+.report-btn.primary{
+  background:#fff;color:#0f172a;border-color:#fff;
+}
+.report-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,0,0,.25)}
+
+/* Cuerpo del reporte */
+.report-body{padding:20px 20px 24px;display:flex;flex-direction:column;gap:16px}
+
+/* KPI grid */
+.report-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.report-stat{
+  background:#fff;border-radius:14px;padding:16px 18px;
+  box-shadow:0 2px 12px rgba(15,23,42,.06);
+  border:1px solid var(--report-border);
+  position:relative;overflow:hidden;
+}
+.report-stat::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  border-radius:14px 14px 0 0;
+}
+.report-stat.kpi-price::before{background:linear-gradient(90deg,#1d4ed8,#3b82f6)}
+.report-stat.kpi-range::before{background:linear-gradient(90deg,#6366f1,#a78bfa)}
+.report-stat.kpi-plus::before{background:linear-gradient(90deg,#059669,#34d399)}
+.report-stat.kpi-future::before{background:linear-gradient(90deg,#d97706,#fbbf24)}
+.report-stat .rs-label{font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;font-weight:600;margin-bottom:6px}
+.report-stat .rs-value{font-size:20px;font-weight:800;color:#111827;line-height:1.1}
+.report-stat.kpi-price .rs-value{color:#1d4ed8}
+.report-stat.kpi-plus .rs-value{color:#059669}
+.report-stat.kpi-future .rs-value{color:#d97706}
+.report-stat .rs-note{font-size:10px;color:#9ca3af;margin-top:5px;font-weight:500}
+
+/* Secciones */
+.report-section{
+  background:#fff;border:1px solid var(--report-border);border-radius:14px;
+  padding:18px 20px;box-shadow:0 2px 12px rgba(15,23,42,.06);
+}
+.report-section-header{
+  display:flex;align-items:center;gap:10px;margin-bottom:13px;
+  padding-bottom:11px;border-bottom:1px solid #f1f3f6;
+}
+.report-section-icon{
+  width:30px;height:30px;border-radius:8px;display:flex;align-items:center;
+  justify-content:center;font-size:15px;flex-shrink:0;
+}
+.report-section h3{font-size:13px;font-weight:700;color:#111827;margin:0;letter-spacing:-.1px}
+.report-section h3 span{display:block;font-size:10px;font-weight:500;color:#9ca3af;margin-top:1px}
+
+/* Summary text */
+.report-summary{
+  font-size:12.5px;line-height:1.85;color:#374151;
+  background:linear-gradient(135deg,#f8faff,#f0f4ff);
+  border:1px solid #dbeafe;border-radius:10px;padding:14px 16px;
+}
+.report-summary strong{color:#1d4ed8}
+
+/* Tablas */
+.report-two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.report-table{width:100%;border-collapse:collapse;font-size:11.5px}
+.report-table tr:last-child td,.report-table tr:last-child th{border-bottom:none}
+.report-table th,.report-table td{padding:8px 10px;border-bottom:1px solid #f1f3f6;text-align:left}
+.report-table th{font-weight:600;color:#6b7280;background:#f9fafb;font-size:10.5px;text-transform:uppercase;letter-spacing:.03em}
+.report-table td{color:#111827;font-weight:500}
+.report-table tr:hover td{background:#fafbff}
+
+/* Chart */
+.report-chart{min-height:250px}
+.report-note{
+  font-size:10.5px;color:#6b7280;line-height:1.65;margin-top:10px;
+  padding:8px 12px;background:#f9fafb;border-radius:7px;border-left:3px solid #e2e5ea;
+}
+
+/* Lectura ejecutiva con iconos */
+.exec-points{display:flex;flex-direction:column;gap:10px}
+.exec-point{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border-radius:9px;background:#f9fafb;border:1px solid #f1f3f6}
+.exec-point-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;margin-top:1px}
+.exec-point-text strong{display:block;font-size:11.5px;font-weight:700;color:#111827;margin-bottom:2px}
+.exec-point-text span{font-size:11px;color:#4b5563;line-height:1.6}
+
+/* Footer del reporte */
+.report-footer{
+  padding:14px 20px;background:#f8f9fb;border-top:1px solid #eaecf0;
+  font-size:10px;color:#9ca3af;line-height:1.7;
+}
+
+/* Divisor de fecha */
+.report-datestamp{
+  display:flex;align-items:center;gap:10px;margin-bottom:14px;
+}
+.report-datestamp-line{flex:1;height:1px;background:#e5e7eb}
+.report-datestamp-text{font-size:10px;color:#9ca3af;white-space:nowrap;font-weight:600;letter-spacing:.05em;text-transform:uppercase}
+
+.pdf-mode .tabs,.pdf-mode #panel-sistema .location-map-card,.pdf-mode .report-actions{display:none!important}
+.pdf-mode .panel{display:block!important}
+.pdf-mode #panel-ubicacion{display:none!important}
+@media(max-width:850px){.report-grid{grid-template-columns:repeat(2,1fr)}.report-head{flex-direction:column}.report-two{grid-template-columns:1fr}}
+@media(max-width:520px){.report-grid{grid-template-columns:1fr}.report-title{font-size:20px}}
+
+</style>
+
+<h2 class="sr-only">Sistema de apoyo a la decisión inmobiliaria en México. Estima el precio actual de una vivienda y su plusvalía proyectada según la zona, combinando el AVM (MAPE 23.63%) con el índice SHF.</h2>
+
+<div style="padding:.65rem 0 0">
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('sistema')">Sistema AVM + Plusvalía</button>
+  <button class="tab" onclick="switchTab('mapa')">Mapa por estado</button>
+  <button class="tab" id="tab-ubicacion" onclick="switchTab('ubicacion')" style="display:none">Mapa de ubicación</button>
+  <button class="tab" onclick="switchTab('modelo')">Métricas del modelo</button>
+  <button class="tab" onclick="switchTab('tendencia')">Tendencia SHF</button>
+  <button class="tab" onclick="switchTab('reporte')">RESULTADOS REPORTE</button>
+</div>
+
+<!-- ======== TAB 1: SISTEMA INTEGRADO ======== -->
+<div id="panel-sistema" class="panel active">
+  <div class="metric-grid">
+    <div class="metric"><div class="metric-label">Objetivo del proyecto</div><div class="metric-val" style="font-size:13px;line-height:1.4">AVM + tendencia</div><div class="metric-sub">Sistema de apoyo a la decisión</div></div>
+    <div class="metric"><div class="metric-label">MAPE modelo final</div><div class="metric-val">23.63%</div><div class="metric-sub">Stacking RF+XGBoost</div></div>
+    <div class="metric"><div class="metric-label">R² conjunto prueba</div><div class="metric-val">0.7726</div><div class="metric-sub">77% variabilidad explicada</div></div>
+    <div class="metric"><div class="metric-label">Error tendencia SHF</div><div class="metric-val">6.62%</div><div class="metric-sub">Validación rodante 37 cortes</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Ubicación de la vivienda</div>
+    <div class="coord-row">
+      <div style="flex:1"><label>Latitud</label><input type="number" id="lat" placeholder="ej. 19.4326" step="0.0001" value="19.4326"></div>
+      <div style="flex:1"><label>Longitud</label><input type="number" id="lon" placeholder="ej. -99.1332" step="0.0001" value="-99.1332"></div>
+    </div>
+    <div class="loc-indicator" id="loc-ok"><i class="ti ti-map-pin" aria-hidden="true"></i> <span id="loc-zm-name"></span> — zona detectada automáticamente</div>
+    <div class="form-row" style="margin-top:4px">
+      <div><label>Tipo de propiedad</label>
+        <select id="tipo">
+          <option value="house">Casa (house)</option>
+          <option value="apartment">Departamento (apartment)</option>
+          <option value="PH">PH</option>
+        </select>
+      </div>
+      <div><label>Zona metropolitana más cercana</label>
+        <select id="zona">
+          <option value="ZM Valle México">ZM Valle de México</option>
+          <option value="ZM Guadalajara">ZM Guadalajara</option>
+          <option value="ZM Monterrey">ZM Monterrey</option>
+          <option value="ZM PueblaTlax">ZM Puebla-Tlaxcala</option>
+          <option value="ZM Tijuana">ZM Tijuana</option>
+          <option value="ZM León">ZM León</option>
+          <option value="ZM Querétaro">ZM Querétaro</option>
+          <option value="ZM Toluca">ZM Toluca</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div><label>Superficie cubierta (m²)</label><input type="number" id="sup_cubierta" value="120" min="20" max="1000"></div>
+      <div><label>Superficie total (m²)</label><input type="number" id="sup_total" value="150" min="20" max="2000"></div>
+    </div>
+    <div style="margin-bottom:9px">
+      <label>Comercios en radio 500m: <strong id="lbl_c">10</strong></label>
+      <input type="range" id="comercio" min="0" max="60" step="1" value="10" oninput="document.getElementById('lbl_c').textContent=this.value">
+    </div>
+    <div style="margin-bottom:9px">
+      <label>Escolaridad promedio AGEB (años): <strong id="lbl_e">12.0</strong></label>
+      <input type="range" id="escolaridad" min="4" max="20" step="0.5" value="12" oninput="document.getElementById('lbl_e').textContent=parseFloat(this.value).toFixed(1)">
+    </div>
+    <button class="btn-primary" onclick="calcularIntegral()">Estimar precio y proyectar plusvalía</button>
+
+    <div class="result-panel" id="result-panel">
+      <div class="result-hero">
+        <div style="font-size:11px;color:var(--text-secondary);margin-bottom:4px">Estimación AVM — precio de oferta de referencia</div>
+        <div class="result-precio" id="res-precio-hero"></div>
+        <div class="result-sub" id="res-intervalo-hero"></div>
+      </div>
+      <div class="result-grid">
+        <div class="result-card val">
+          <div class="rc-label">Precio estimado hoy</div>
+          <div class="rc-val" id="rc-hoy"></div>
+          <div style="font-size:10px;color:var(--text-success);margin-top:2px">MAPE ±23.63%</div>
+        </div>
+        <div class="result-card crec">
+          <div class="rc-label">Plusvalía proyectada 1 año</div>
+          <div class="rc-val" id="rc-plus"></div>
+          <div style="font-size:10px;color:var(--text-accent);margin-top:2px" id="rc-tasa-zm"></div>
+        </div>
+        <div class="result-card warn">
+          <div class="rc-label">Precio proyectado 2027</div>
+          <div class="rc-val" id="rc-fut"></div>
+          <div style="font-size:10px;color:var(--text-warning);margin-top:2px">Error tendencia ±6.62%</div>
+        </div>
+      </div>
+      <div style="background:var(--surface-1);border-radius:var(--radius);padding:10px 13px;font-size:11px;color:var(--text-secondary);line-height:1.7">
+        <strong style="color:var(--text-primary)">Cómo leer este resultado:</strong><br>
+        El precio estimado es una referencia del nivel de la oferta en tu zona — no el precio de transacción cerrada.
+        La plusvalía proyectada usa la tasa de crecimiento anual promedio del Índice SHF para la zona metropolitana detectada.
+        El intervalo de predicción se construye sobre el MAPE del modelo (±23.63%). No sustituye un avalúo certificado.
+      </div>
+      <div class="card" style="margin-top:9px;padding:10px 11px">
+        <div class="card-title" style="margin-bottom:7px">Ubicación de la vivienda</div>
+        <div id="ubicacion-map" style="width:100%;height:320px;border-radius:8px;overflow:hidden"></div>
+        <div id="map-coord-text" style="font-size:10px;color:var(--text-muted);margin-top:6px"></div>
+      </div>
+      <div class="warn-box">Estimación sobre precios de oferta Properati. El AVM tiene MAPE 23.63% — para una vivienda de $3M, el error puede ser ±$709k. Úsalo como referencia comparativa, no como valuación formal.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ======== TAB 2: MAPA ======== -->
+<div id="panel-mapa" class="panel">
+  <div class="metric-grid">
+    <div class="metric"><div class="metric-label">Entidades en el mapa</div><div class="metric-val">32</div><div class="metric-sub">20 con MAPE + 12 sin datos</div></div>
+    <div class="metric"><div class="metric-label">Menor error</div><div class="metric-val">11.0%</div><div class="metric-sub">Hidalgo</div></div>
+    <div class="metric"><div class="metric-label">Mayor error</div><div class="metric-val">48.6%</div><div class="metric-sub">Guerrero</div></div>
+    <div class="metric"><div class="metric-label">Correlación N–MAPE</div><div class="metric-val">r = 0.07</div><div class="metric-sub">Tamaño ≠ precisión</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">MAPE del AVM por entidad federativa</div>
+    <div class="map-toggle">
+      <button class="active" id="btn-mape" onclick="setMode('mape')">Error del modelo (MAPE)</button>
+      <button id="btn-crec" onclick="setMode('crec')">Crecimiento SHF 2020–2026</button>
+    </div>
+    <div class="map-wrap">
+      <div class="mtooltip" id="mtt"></div>
+      <svg id="mxmap" viewBox="0 0 900 500" width="100%" role="img" aria-label="Mapa coroplético de México con MAPE por estado o crecimiento SHF por zona"></svg>
+    </div>
+    <div class="legend-row">
+      <span id="lg-lo">bajo</span>
+      <div class="leg-grad" id="lg-bar"></div>
+      <span id="lg-hi">alto</span>
+      <span style="margin-left:10px;color:var(--text-muted)">sin datos</span>
+      <div style="width:18px;height:9px;background:#c0bfb7;border-radius:2px;margin-left:4px"></div>
+    </div>
+    <p style="font-size:11px;color:var(--text-muted);margin-top:6px">Los 32 estados aparecen en el mapa. Cuando el modelo no tiene ≥10 observaciones de prueba para una entidad, se muestra en gris como “sin datos suficientes”; no se inventa un MAPE.</p>
+  </div>
+  <div class="card">
+    <div class="card-title">MAPE por entidad federativa</div>
+    <div id="estado-bars"></div>
+  </div>
+</div>
+
+
+<!-- ======== TAB: MAPA DE UBICACIÓN ======== -->
+<div id="panel-ubicacion" class="panel">
+  <div class="card location-map-card">
+    <div class="location-map-toolbar">
+      <div>
+        <div class="card-title" style="margin-bottom:2px">Ubicación evaluada</div>
+        <div class="location-coords" id="location-coords">Coordenadas</div>
+      </div>
+      <button class="btn-secondary" onclick="volverSistema()">← Volver al cálculo</button>
+    </div>
+    <div id="location-map"></div>
+    <div style="font-size:11px;color:var(--text-secondary);margin-top:7px">El marcador corresponde a las coordenadas introducidas. El mapa se centra y amplía automáticamente al calcular.</div>
+  </div>
+</div>
+
+<!-- ======== TAB 3: MÉTRICAS MODELO ======== -->
+<div id="panel-modelo" class="panel">
+  <div class="metric-grid">
+    <div class="metric"><div class="metric-label">Registros modelados</div><div class="metric-val">28,851</div><div class="metric-sub">de 128,524 totales</div></div>
+    <div class="metric"><div class="metric-label">Mejora vs. Lasso</div><div class="metric-val">−116 pp</div><div class="metric-sub">MAPE 140.2%→23.6%</div></div>
+    <div class="metric"><div class="metric-label">MAE final</div><div class="metric-val">$883k</div><div class="metric-sub">MXN, conj. prueba</div></div>
+    <div class="metric"><div class="metric-label">RMSE final</div><div class="metric-val">$1.91M</div><div class="metric-sub">MXN, conj. prueba</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Comparativa de modelos (datos reales del notebook)</div>
+    <div class="modelo-row header"><span>Modelo</span><span>MAE</span><span>RMSE</span><span>MAPE</span></div>
+    <div class="modelo-row"><span>Lasso baseline</span><span>$2,983,697</span><span>$4,714,822</span><span class="high">140.19%</span></div>
+    <div class="modelo-row"><span>Random Forest</span><span>$978,447</span><span>$2,133,705</span><span class="mid">31.08%</span></div>
+    <div class="modelo-row"><span>XGBoost sin ajuste</span><span>$958,933</span><span>$2,059,042</span><span class="mid">29.83%</span></div>
+    <div class="modelo-row best-row"><span style="font-weight:500">Stacking RF+XGB <span class="badge-b">final</span></span><span style="font-weight:500">$883,309</span><span style="font-weight:500">$1,914,687</span><span style="font-weight:500" class="low">23.63%</span></div>
+  </div>
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title">Importancia de variables — top 8</div>
+      <div id="imp-bars"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Ablación: granular vs. agregado</div>
+      <div id="abl-bars"></div>
+      <p style="font-size:11px;color:var(--text-secondary);margin-top:8px">Resolución AGEB+DENUE 500m reduce el error 2.85 pp vs. promedio por entidad.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ======== TAB 4: TENDENCIA ======== -->
+<div id="panel-tendencia" class="panel">
+  <div class="metric-grid">
+    <div class="metric"><div class="metric-label">MAPE backtesting</div><div class="metric-val">0.63%</div><div class="metric-sub">4 trim., 1 corte</div></div>
+    <div class="metric"><div class="metric-label">MAPE validación rodante</div><div class="metric-val">6.62%</div><div class="metric-sub">37 cortes — cifra adoptada</div></div>
+    <div class="metric"><div class="metric-label">Modelo</div><div class="metric-val" style="font-size:13px">Prophet</div><div class="metric-sub">tasa hipotecaria + INPC</div></div>
+    <div class="metric"><div class="metric-label">Horizonte fiable</div><div class="metric-val">1–2 trim.</div><div class="metric-sub">~18% a 1 año</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Crecimiento índice SHF 2020–2026 por zona metropolitana (datos reales)</div>
+    <div id="crec-zm-bars"></div>
+    <p style="font-size:11px;color:var(--text-secondary);margin-top:8px">Las zonas de mayor crecimiento son fronterizas y turísticas, no las de mayor precio absoluto. ZM Tijuana (94.5%) vs. ZM Valle México (41.3%).</p>
+  </div>
+  <div class="card">
+    <div class="card-title">MAPE backtesting por zona (4 trimestres, valor reportado en Entrega 2)</div>
+    <div id="zm-backt"></div>
+    <p style="font-size:11px;color:var(--text-secondary);margin-top:8px">El backtesting de ventana corta sobre serie suavizada subestima el error real. La validación rodante (6.62%) es la cifra adoptada en la Entrega 3.</p>
+  </div>
+</div>
+
+<!-- ======== TAB 5: RESULTADOS REPORTE ======== -->
+<div id="panel-reporte" class="panel">
+  <div class="report-shell" id="report-content">
+
+    <!-- HEADER -->
+    <div class="report-head">
+      <div>
+        <div class="report-kicker">Reporte Ejecutivo · AVM + Índice SHF</div>
+        <div class="report-title">Valuación de Vivienda</div>
+        <div class="report-subtitle">Estimación de precio de oferta y proyección de plusvalía generada con el modelo AVM (Stacking RF + XGBoost) y el Índice SHF 2020–2026.</div>
+      </div>
+      <div class="report-actions">
+        <button class="report-btn primary" onclick="descargarPDF()">⬇ Descargar PDF</button>
+        <button class="report-btn" onclick="descargarResumenCSV()">Exportar CSV</button>
+      </div>
+    </div>
+
+    <!-- CUERPO -->
+    <div class="report-body">
+
+      <!-- Fecha -->
+      <div class="report-datestamp">
+        <div class="report-datestamp-line"></div>
+        <div class="report-datestamp-text" id="rep-fecha">Generado —</div>
+        <div class="report-datestamp-line"></div>
+      </div>
+
+      <!-- KPIs -->
+      <div class="report-grid">
+        <div class="report-stat kpi-price">
+          <div class="rs-label">Precio estimado hoy</div>
+          <div class="rs-value" id="rep-precio">—</div>
+          <div class="rs-note">Modelo AVM · oferta de referencia</div>
+        </div>
+        <div class="report-stat kpi-range">
+          <div class="rs-label">Intervalo de confianza</div>
+          <div class="rs-value" id="rep-intervalo" style="font-size:13px;line-height:1.3">—</div>
+          <div class="rs-note">MAPE ±23.63%</div>
+        </div>
+        <div class="report-stat kpi-plus">
+          <div class="rs-label">Plusvalía proyectada</div>
+          <div class="rs-value" id="rep-plus">—</div>
+          <div class="rs-note" id="rep-tasa">—</div>
+        </div>
+        <div class="report-stat kpi-future">
+          <div class="rs-label">Valor proyectado ~1 año</div>
+          <div class="rs-value" id="rep-futuro">—</div>
+          <div class="rs-note">Error tendencia ±6.62%</div>
+        </div>
+      </div>
+
+      <!-- Resumen narrativo -->
+      <div class="report-section">
+        <div class="report-section-header">
+          <div class="report-section-icon" style="background:#eef2ff">📋</div>
+          <h3>Resumen de la valuación <span>Análisis generado automáticamente</span></h3>
+        </div>
+        <div class="report-summary" id="rep-summary">
+          Realiza una estimación en la pestaña <strong>Sistema AVM + Plusvalía</strong> para generar aquí el resumen personalizado.
+        </div>
+      </div>
+
+      <!-- Dos columnas: vivienda + modelo -->
+      <div class="report-two">
+        <div class="report-section">
+          <div class="report-section-header">
+            <div class="report-section-icon" style="background:#f0fdf4">🏠</div>
+            <h3>Características de la vivienda <span>Datos ingresados</span></h3>
+          </div>
+          <table class="report-table">
+            <tbody>
+              <tr><th>Tipo de propiedad</th><td id="rep-tipo">—</td></tr>
+              <tr><th>Superficie cubierta</th><td id="rep-sc">—</td></tr>
+              <tr><th>Superficie total</th><td id="rep-st">—</td></tr>
+              <tr><th>Comercios / 500 m</th><td id="rep-comercio">—</td></tr>
+              <tr><th>Escolaridad AGEB</th><td id="rep-esc">—</td></tr>
+              <tr><th>Zona metropolitana</th><td id="rep-zona">—</td></tr>
+              <tr><th>Coordenadas</th><td id="rep-coords">—</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="report-section">
+          <div class="report-section-header">
+            <div class="report-section-icon" style="background:#fffbeb">⚙️</div>
+            <h3>Métricas del modelo <span>Resultados del notebook</span></h3>
+          </div>
+          <table class="report-table">
+            <tbody>
+              <tr><th>Modelo final</th><td>Stacking RF + XGBoost</td></tr>
+              <tr><th>MAPE AVM</th><td><strong style="color:#059669">23.63%</strong></td></tr>
+              <tr><th>MAE</th><td>$883,309 MXN</td></tr>
+              <tr><th>RMSE</th><td>$1,914,687 MXN</td></tr>
+              <tr><th>MAPE tendencia SHF</th><td><strong style="color:#2563eb">6.62%</strong></td></tr>
+              <tr><th>Mejor MAPE estatal</th><td>Hidalgo · 11.0%</td></tr>
+              <tr><th>Mayor crecimiento ZM</th><td>Tijuana · 94.45%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Gráfica plusvalía ZM -->
+      <div class="report-section">
+        <div class="report-section-header">
+          <div class="report-section-icon" style="background:#eff6ff">📈</div>
+          <h3>Plusvalía por zona metropolitana <span>Índice SHF 2020–2026</span></h3>
+        </div>
+        <div id="report-zm-chart" class="report-chart"></div>
+        <div class="report-note">El crecimiento mostrado corresponde al Índice SHF 2020–2026. La proyección individual utiliza el crecimiento promedio anual simple de la zona seleccionada.</div>
+      </div>
+
+      <!-- Lectura ejecutiva -->
+      <div class="report-section">
+        <div class="report-section-header">
+          <div class="report-section-icon" style="background:#fef3c7">💡</div>
+          <h3>Lectura ejecutiva <span>Guía de interpretación</span></h3>
+        </div>
+        <div class="exec-points">
+          <div class="exec-point">
+            <div class="exec-point-icon" style="background:#eff6ff">🎯</div>
+            <div class="exec-point-text">
+              <strong>Interpretación del precio</strong>
+              <span>El AVM proporciona una referencia del precio de oferta, no un precio de cierre ni un avalúo certificado. El intervalo debe interpretarse junto con el MAPE del modelo (±23.63%).</span>
+            </div>
+          </div>
+          <div class="exec-point">
+            <div class="exec-point-icon" style="background:#f0fdf4">📊</div>
+            <div class="exec-point-text">
+              <strong>Proyección de plusvalía</strong>
+              <span>La proyección combina el valor estimado actual con el crecimiento anual promedio observado en el Índice SHF de la zona metropolitana seleccionada.</span>
+            </div>
+          </div>
+          <div class="exec-point">
+            <div class="exec-point-icon" style="background:#fff7ed">⚠️</div>
+            <div class="exec-point-text">
+              <strong>Límites del modelo</strong>
+              <span>La incertidumbre del AVM es material. Para decisiones de crédito, compra-venta o efectos legales se recomienda complementar con un avalúo profesional certificado.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fuente y metodología -->
+      <div class="report-section">
+        <div class="report-section-header">
+          <div class="report-section-icon" style="background:#f5f3ff">📚</div>
+          <h3>Fuente y metodología <span>Pipeline del proyecto</span></h3>
+        </div>
+        <div class="report-note" style="margin-top:0">
+          El dashboard se basa en datos Properati enriquecidos con variables censales/AGEB y DENUE en radio de 500 m. Se evaluaron modelos Lasso, Random Forest, XGBoost y Stacking. El Índice SHF incorpora tasa hipotecaria e INPC subyacente como regresores. MAPE final AVM: 23.63% · Validación rodante tendencia: 6.62% (37 cortes).
+        </div>
+      </div>
+
+    </div><!-- /report-body -->
+
+    <!-- Footer -->
+    <div class="report-footer">
+      Sistema de Apoyo a la Decisión Inmobiliaria · Modelo AVM Stacking RF+XGBoost · Datos Properati + SHF + INEGI · Este reporte no sustituye un avalúo profesional certificado.
+    </div>
+
+  </div>
+</div>
+</div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+function switchTab(id){
+  document.querySelectorAll('.tab').forEach(t=>{
+    const onclick=t.getAttribute('onclick')||'';
+    t.classList.toggle('active',onclick.includes("switchTab('"+id+"')"));
+  });
+  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+id));
+  if(id==='ubicacion' && window.locationMap){ setTimeout(()=>window.locationMap.invalidateSize(),80); }
+  if(id==='reporte'){ actualizarReporte(); renderReporteZM(); }
+}
+function volverSistema(){ switchTab('sistema'); }
+
+let locationMap=null, locationMarker=null, locationCircle=null;
+function mostrarMapaUbicacion(lat,lon){
+  document.getElementById('tab-ubicacion').style.display='inline-block';
+  document.getElementById('location-coords').textContent=`Latitud ${lat.toFixed(6)} · Longitud ${lon.toFixed(6)}`;
+  switchTab('ubicacion');
+  setTimeout(()=>{
+    if(!locationMap){
+      locationMap=L.map('location-map',{zoomControl:true}).setView([lat,lon],15);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap contributors'}).addTo(locationMap);
+    } else { locationMap.invalidateSize(); locationMap.setView([lat,lon],16); }
+    if(locationMarker) locationMap.removeLayer(locationMarker);
+    if(locationCircle) locationMap.removeLayer(locationCircle);
+    locationMarker=L.marker([lat,lon]).addTo(locationMap).bindPopup(`<strong>Ubicación evaluada</strong><br>${lat.toFixed(6)}, ${lon.toFixed(6)}`).openPopup();
+    locationCircle=L.circle([lat,lon],{radius:500}).addTo(locationMap);
+    locationMap.setView([lat,lon],16);
+  },60);
+}
+
+const ESTADOS_MEXICO=[
+  'Aguascalientes','Baja California','Baja California Sur','Campeche','Chiapas',
+  'Chihuahua','Ciudad de México','Coahuila de Zaragoza','Colima','Durango',
+  'Estado de México','Guanajuato','Guerrero','Hidalgo','Jalisco','Michoacán de Ocampo',
+  'Morelos','Nayarit','Nuevo León','Oaxaca','Puebla','Querétaro','Quintana Roo',
+  'San Luis Potosí','Sinaloa','Sonora','Tabasco','Tamaulipas','Tlaxcala',
+  'Veracruz de Ignacio de la Llave','Yucatán','Zacatecas'
+];
+
+const MAPE_ESTADO={
+  'Hidalgo':11.003,'Querétaro':13.566,'San Luis Potosí':16.237,
+  'Yucatán':19.022,'Chiapas':19.200,'Veracruz de Ignacio de la Llave':19.253,
+  'Nuevo León':19.746,'Guanajuato':20.834,'Baja California Sur':20.980,
+  'Puebla':20.994,'Distrito Federal':21.422,'Aguascalientes':24.187,
+  'Estado de México':25.492,'Sonora':30.345,'Quintana Roo':30.797,
+  'Tamaulipas':30.870,'Tabasco':32.554,'Chihuahua':33.659,
+  'Morelos':40.030,'Guerrero':48.602
+};
+const CREC_ZM={
+  'ZM Tijuana':94.451,'ZM Guadalajara':78.579,'ZM Monterrey':73.574,
+  'ZM PueblaTlax':66.395,'ZM León':65.138,'ZM Querétaro':64.487,
+  'ZM Toluca':42.250,'ZM Valle México':41.272
+};
+const MAPE_ZM={'ZM Monterrey':0.14,'ZM León':0.42,'ZM Querétaro':0.58,
+  'ZM Valle México':0.71,'ZM PueblaTlax':0.95,'ZM Toluca':1.12,
+  'ZM Tijuana':1.38,'ZM Guadalajara':1.74};
+
+// Centros ZM para detección automática por coordenada
+const CENTROS_ZM=[
+  {id:'ZM Valle México',lat:19.4326,lon:-99.1332,precio:7060000,crec:41.272},
+  {id:'ZM Guadalajara',lat:20.6597,lon:-103.3496,precio:3800000,crec:78.579},
+  {id:'ZM Monterrey',lat:25.6866,lon:-100.3161,precio:4200000,crec:73.574},
+  {id:'ZM PueblaTlax',lat:19.0414,lon:-98.2063,precio:2900000,crec:66.395},
+  {id:'ZM Tijuana',lat:32.5149,lon:-117.0382,precio:4500000,crec:94.451},
+  {id:'ZM León',lat:21.1250,lon:-101.6860,precio:2600000,crec:65.138},
+  {id:'ZM Querétaro',lat:20.5888,lon:-100.3899,precio:3400000,crec:64.487},
+  {id:'ZM Toluca',lat:19.2826,lon:-99.6557,precio:2200000,crec:42.250}
+];
+
+const STATE_MAP={
+  'México':'Estado de México',
+  'Ciudad de México':'Distrito Federal',
+  'Distrito Federal':'Distrito Federal',
+  'Veracruz de Ignacio de la Llave':'Veracruz de Ignacio de la Llave',
+  'Michoacán de Ocampo':'Michoacán de Ocampo',
+  'Coahuila de Zaragoza':'Coahuila de Zaragoza'
+};
+// ZM→estados para colorear mapa de crecimiento
+const ZM_ESTADOS={
+  'ZM Tijuana':['Baja California'],'ZM Guadalajara':['Jalisco'],
+  'ZM Monterrey':['Nuevo León'],'ZM PueblaTlax':['Puebla','Tlaxcala'],
+  'ZM León':['Guanajuato'],'ZM Querétaro':['Querétaro'],
+  'ZM Toluca':['México'],'ZM Valle México':['Ciudad de México','México']
+};
+
+function haversine(la1,lo1,la2,lo2){
+  const R=6371,d2r=Math.PI/180;
+  const dLat=(la2-la1)*d2r,dLon=(lo2-lo1)*d2r;
+  const a=Math.sin(dLat/2)**2+Math.cos(la1*d2r)*Math.cos(la2*d2r)*Math.sin(dLon/2)**2;
+  return R*2*Math.asin(Math.sqrt(a));
+}
+function nearestZM(lat,lon){
+  let best=null,bestD=Infinity;
+  CENTROS_ZM.forEach(z=>{const d=haversine(lat,lon,z.lat,z.lon);if(d<bestD){bestD=d;best=z;}});
+  return best;
+}
+
+// Detect ZM from lat/lon inputs
+document.addEventListener('DOMContentLoaded',()=>{
+  ['lat','lon'].forEach(id=>document.getElementById(id).addEventListener('input',detectZM));
+});
+function detectZM(){
+  const lat=parseFloat(document.getElementById('lat').value);
+  const lon=parseFloat(document.getElementById('lon').value);
+  if(isNaN(lat)||isNaN(lon)||lat<14||lat>33||lon<-118||lon>-86)return;
+  const zm=nearestZM(lat,lon);
+  if(zm){
+    document.getElementById('zona').value=zm.id;
+    document.getElementById('loc-zm-name').textContent=zm.id;
+    document.getElementById('loc-ok').style.display='block';
+  }
+}
+
+function fmt(n){return '$'+Math.round(n).toLocaleString('es-MX')+' MXN'}
+function fmtM(n){
+  if(n>=1e6)return '$'+(n/1e6).toFixed(2)+'M MXN';
+  return '$'+Math.round(n/1000)+'k MXN';
+}
+
+let ubicacionMap=null;
+let ubicacionMarker=null;
+let ubicacionCircle=null;
+
+function initUbicacionMap(lat,lon){
+  const el=document.getElementById('ubicacion-map');
+  if(!el || typeof L==='undefined') return;
+
+  if(!ubicacionMap){
+    ubicacionMap=L.map(el,{scrollWheelZoom:true,zoomControl:true});
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+      maxZoom:19,
+      attribution:'&copy; OpenStreetMap'
+    }).addTo(ubicacionMap);
+  }
+
+  ubicacionMap.setView([lat,lon],15);
+
+  if(ubicacionMarker) ubicacionMarker.remove();
+  if(ubicacionCircle) ubicacionCircle.remove();
+
+  ubicacionMarker=L.marker([lat,lon]).addTo(ubicacionMap)
+    .bindPopup('<strong>Ubicación evaluada</strong><br>'+lat.toFixed(5)+', '+lon.toFixed(5))
+    .openPopup();
+
+  ubicacionCircle=L.circle([lat,lon],{
+    radius:500,
+    weight:1,
+    fillOpacity:0.10
+  }).addTo(ubicacionMap);
+
+  document.getElementById('map-coord-text').textContent=
+    'Coordenadas: '+lat.toFixed(5)+'°, '+lon.toFixed(5)+'° · zoom automático a la ubicación ingresada';
+
+  setTimeout(()=>ubicacionMap.invalidateSize(),150);
+}
+
+function calcularIntegral(){
+  const lat=parseFloat(document.getElementById('lat').value)||19.4326;
+  const lon=parseFloat(document.getElementById('lon').value)||-99.1332;
+  const sc=parseFloat(document.getElementById('sup_cubierta').value)||120;
+  const tipo=document.getElementById('tipo').value;
+  const zonaSel=document.getElementById('zona').value;
+  const comercio=parseInt(document.getElementById('comercio').value)||10;
+  const esc=parseFloat(document.getElementById('escolaridad').value)||12;
+
+  const zm=CENTROS_ZM.find(z=>z.id===zonaSel)||CENTROS_ZM[0];
+  let base=zm.precio;
+  base*=(sc/120)*0.55+0.45;
+  base*=1+(esc-9)*0.012;
+  if(comercio<=5)base*=1.02; else if(comercio>=40)base*=0.97;
+  if(tipo==='apartment')base*=0.80; else if(tipo==='PH')base*=1.25;
+
+  const mapeF=0.2363;
+  const low=base*(1-mapeF), high=base*(1+mapeF);
+  const tasaAnual=zm.crec/6/100;  // promedio anual simple sobre 6 años
+  const plusvalia=base*tasaAnual;
+  const futuro=base+plusvalia;
+
+  ultimoResultado={base,low,high,plusvalia,futuro,tasa:tasaAnual,zm:zm.id,
+    lat,lon,sc,st:parseFloat(document.getElementById('sup_total').value)||150,
+    tipo,comercio,esc};
+
+  document.getElementById('res-precio-hero').textContent=fmt(base);
+  document.getElementById('res-intervalo-hero').textContent='Intervalo aprox. 95%: '+fmt(low)+' – '+fmt(high);
+  document.getElementById('rc-hoy').textContent=fmtM(base);
+  document.getElementById('rc-plus').textContent='+'+fmtM(plusvalia);
+  document.getElementById('rc-tasa-zm').textContent=zm.id+' · crecim. anual ~'+(zm.crec/6).toFixed(1)+'%';
+  document.getElementById('rc-fut').textContent=fmtM(futuro);
+
+  document.getElementById('result-panel').style.display='block';
+
+  // Llevar automáticamente al mapa y hacer zoom en las coordenadas ingresadas.
+  setTimeout(()=>{
+    initUbicacionMap(lat,lon);
+    document.getElementById('ubicacion-map').scrollIntoView({behavior:'smooth',block:'center'});
+  },80);
+}
+
+// =========== MAPA ===========
+let mapMode='mape';
+function setMode(m){
+  mapMode=m;
+  document.getElementById('btn-mape').classList.toggle('active',m==='mape');
+  document.getElementById('btn-crec').classList.toggle('active',m==='crec');
+  updateMapFill();updateLegend();
+}
+function colorMape(v){
+  if(v==null)return'#c0bfb7';
+  const t=Math.max(0,Math.min(1,(v-11)/(49-11)));
+  const r=Math.round(26+t*(235-26)),g=Math.round(175+t*(83-175)),b=Math.round(212+t*(30-212));
+  return`rgb(${r},${g},${b})`;
+}
+function colorCrec(v){
+  if(v==null)return'#c0bfb7';
+  const t=Math.max(0,Math.min(1,(v-41)/(95-41)));
+  const r=Math.round(42+t*(235-42)),g=Math.round(120+t*(83-120)),b=Math.round(212+t*(30-212));
+  return`rgb(${r},${g},${b})`;
+}
+function stateMapeKey(nm){return STATE_MAP[nm]||nm;}
+function stateCrecVal(nm){
+  const key=stateMapeKey(nm);
+  for(const [zm,ests] of Object.entries(ZM_ESTADOS)){
+    if(ests.some(e=>e===key||e===nm))return CREC_ZM[zm];
+  }
+  return null;
+}
+
+let svgSelection=null;
+function updateMapFill(){
+  if(!svgSelection)return;
+  svgSelection.attr('fill',function(){
+    const nm=this.getAttribute('data-nm');
+    if(mapMode==='mape') return colorMape(MAPE_ESTADO[stateMapeKey(nm)]??null);
+    return colorCrec(stateCrecVal(nm));
+  });
+}
+function updateLegend(){
+  const bar=document.getElementById('lg-bar');
+  const lo=document.getElementById('lg-lo'),hi=document.getElementById('lg-hi');
+  if(mapMode==='mape'){
+    bar.style.background='linear-gradient(to right,rgb(26,175,212),rgb(235,83,30))';
+    lo.textContent='11% (mejor)';hi.textContent='49% (peor)';
+  } else {
+    bar.style.background='linear-gradient(to right,rgb(42,120,212),rgb(235,83,30))';
+    lo.textContent='41% crecim.';hi.textContent='94% crecim.';
+  }
+}
+
+const mtt=document.getElementById('mtt');
+d3.json('https://cdn.jsdelivr.net/npm/datamaps@0.5.10/src/js/data/mex.topo.json').then(topo=>{
+  const feats=topojson.feature(topo,topo.objects.mex).features;
+  const proj=d3.geoMercator().fitSize([900,500],{type:'FeatureCollection',features:feats});
+  const path=d3.geoPath(proj);
+  const svg=d3.select('#mxmap');
+  svgSelection=svg.selectAll('path').data(feats).join('path')
+    .attr('data-nm',d=>d.properties.name||'')
+    .attr('d',path)
+    .attr('stroke','var(--surface-2)').attr('stroke-width',0.8)
+    .attr('fill',d=>colorMape(MAPE_ESTADO[stateMapeKey(d.properties.name||'')]??null))
+    .on('mousemove',function(event,d){
+      const nm=d.properties.name||'';
+      const key=stateMapeKey(nm);
+      let html=`<strong>${nm}</strong><br>`;
+      if(mapMode==='mape'){
+        const v=MAPE_ESTADO[key];
+        html+=v?`MAPE: <strong>${v.toFixed(1)}%</strong>`:'Sin datos suficientes';
+      } else {
+        const v=stateCrecVal(nm);
+        html+=v?`Crec. SHF: <strong>${v.toFixed(1)}%</strong>`:'Sin zona metropolitana asignada';
+      }
+      const el=document.getElementById('mxmap');
+      const r=el.getBoundingClientRect();
+      mtt.style.display='block';
+      mtt.style.left=Math.min(event.clientX-r.left+10,r.width-165)+'px';
+      mtt.style.top=Math.max(event.clientY-r.top-45,4)+'px';
+      mtt.innerHTML=html;
+    })
+    .on('mouseleave',()=>mtt.style.display='none');
+  updateLegend();
+}).catch(()=>{
+  d3.select('#mxmap').append('text').attr('x',450).attr('y',250)
+    .attr('text-anchor','middle').attr('fill','var(--text-muted)').attr('font-size',13)
+    .text('No se pudo cargar el mapa');
+});
+
+// =========== BARRAS ===========
+function makeBars(cid,data,maxV,colFn,fmtFn){
+  const c=document.getElementById(cid);if(!c)return;c.innerHTML='';
+  Object.entries(data).forEach(([k,v])=>{
+    const p=Math.round((Math.abs(v)/maxV)*100);
+    const row=document.createElement('div');row.className='bar-row';
+    row.innerHTML=`<span class="bar-label" title="${k}">${k}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${p}%;background:${colFn(v)}"></div></div>
+      <span class="bar-val">${fmtFn(v)}</span>`;
+    c.appendChild(row);
+  });
+}
+
+const estadoDataCompleta=ESTADOS_MEXICO.map(estado=>[
+  estado,
+  MAPE_ESTADO[estado] ?? MAPE_ESTADO[STATE_MAP[estado]]
+]);
+
+function makeStateBars(){
+  const c=document.getElementById('estado-bars'); if(!c)return;
+  c.innerHTML='';
+  estadoDataCompleta
+    .sort((a,b)=>{
+      if(a[1]==null && b[1]!=null)return 1;
+      if(a[1]!=null && b[1]==null)return -1;
+      return (a[1]??999)-(b[1]??999);
+    })
+    .forEach(([k,v])=>{
+      const row=document.createElement('div'); row.className='bar-row';
+      if(v==null){
+        row.innerHTML=`<span class="bar-label" title="${k}">${k}</span>
+          <div class="bar-track"><div class="bar-fill" style="width:100%;background:#c0bfb7"></div></div>
+          <span class="bar-val" style="color:var(--text-muted)">Sin datos</span>`;
+      }else{
+        const p=Math.round((Math.abs(v)/50)*100);
+        const col=v<22?'#1baf7a':v<32?'#eda100':'#e34948';
+        row.innerHTML=`<span class="bar-label" title="${k}">${k}</span>
+          <div class="bar-track"><div class="bar-fill" style="width:${p}%;background:${col}"></div></div>
+          <span class="bar-val">${v.toFixed(1)}%</span>`;
+      }
+      c.appendChild(row);
+    });
+}
+makeStateBars();
+
+makeBars('imp-bars',{
+  'surface_covered_in_m2':29.0,'precio_prom_entidad':18.0,'tipo_house':11.0,
+  'surface_total_in_m2':9.0,'cluster_geo':7.0,'GRAPROES':6.0,
+  'dist_centro_mas_cercano':5.0,'lat':4.0},29,()=>'#2a78d6',v=>v.toFixed(1)+'%');
+
+makeBars('abl-bars',{'Agregado por entidad':28.75,'Granular AGEB+DENUE':25.90},30,
+  v=>v>27?'#e76f51':'#1baf7a',v=>v.toFixed(2)+'%');
+
+const sortedZM=Object.entries(CREC_ZM).sort((a,b)=>b[1]-a[1]);
+makeBars('crec-zm-bars',Object.fromEntries(sortedZM),95,
+  v=>v>=90?'#eb6834':v>=70?'#eda100':'#2a78d6',v=>v.toFixed(2)+'%');
+
+const zmBT=document.getElementById('zm-backt');
+Object.entries(MAPE_ZM).sort((a,b)=>a[1]-b[1]).forEach(([k,v])=>{
+  const row=document.createElement('div');
+  row.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:0.5px solid var(--border);font-size:12px';
+  const cls=v<0.5?'low':v<1.0?'mid':'high';
+  row.innerHTML=`<span style="color:var(--text-secondary)">${k}</span><span class="${cls}" style="font-weight:500">${v.toFixed(2)}%</span>`;
+  zmBT.appendChild(row);
+});
+
+updateLegend();
+
+// =========== REPORTE EJECUTIVO / PDF ===========
+let ultimoResultado={
+  base:null,low:null,high:null,plusvalia:null,futuro:null,tasa:null,zm:null,
+  lat:null,lon:null,sc:null,st:null,tipo:null,comercio:null,esc:null
+};
+
+function actualizarReporte(){
+  const r=ultimoResultado;
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v??'—';};
+  // Fecha
+  const fechaEl=document.getElementById('rep-fecha');
+  if(fechaEl){
+    const now=new Date();
+    fechaEl.textContent='Generado el '+now.toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'});
+  }
+  if(r.base==null){
+    set('rep-precio','—');set('rep-intervalo','—');set('rep-plus','—');set('rep-futuro','—');set('rep-tasa','—');
+    set('rep-summary','Realiza una estimación en la pestaña Sistema AVM + Plusvalía para generar aquí el resumen personalizado.');
+    return;
+  }
+  set('rep-precio',fmt(r.base));
+  set('rep-intervalo',fmtM(r.low)+' – '+fmtM(r.high));
+  set('rep-plus','+'+fmtM(r.plusvalia));
+  set('rep-futuro',fmtM(r.futuro));
+  set('rep-tasa',r.zm+' · '+(r.tasa*100).toFixed(2)+'% anual aprox.');
+  set('rep-tipo',r.tipo==='house'?'Casa':r.tipo==='apartment'?'Departamento':'PH');
+  set('rep-sc',r.sc.toLocaleString('es-MX')+' m²');
+  set('rep-st',r.st.toLocaleString('es-MX')+' m²');
+  set('rep-comercio',r.comercio+' establecimientos');
+  set('rep-esc',r.esc.toFixed(1)+' años');
+  set('rep-zona',r.zm);
+  set('rep-coords',r.lat.toFixed(5)+'°, '+r.lon.toFixed(5)+'°');
+  const pct=((r.plusvalia/r.base)*100).toFixed(1);
+  document.getElementById('rep-summary').innerHTML=
+    `La vivienda evaluada presenta un <strong>precio estimado de ${fmt(r.base)}</strong>, con un intervalo aproximado de ${fmt(r.low)} a ${fmt(r.high)} considerando el MAPE del AVM de 23.63%. `+
+    `La zona identificada es <strong>${r.zm}</strong>, con un crecimiento anual promedio aproximado de <strong>${(r.tasa*100).toFixed(2)}%</strong>. `+
+    `Bajo ese supuesto, la plusvalía estimada para un año es de <strong>${fmt(r.plusvalia)}</strong> (${pct}%) y el valor proyectado es de <strong>${fmt(r.futuro)}</strong>.`;
+}
+
+function renderReporteZM(){
+  const el=document.getElementById('report-zm-chart');
+  if(!el || typeof d3==='undefined')return;
+  el.innerHTML='';
+  const data=Object.entries(CREC_ZM).sort((a,b)=>b[1]-a[1]);
+  const width=Math.max(520,el.clientWidth||700), height=270, margin={top:12,right:55,bottom:35,left:150};
+  const svg=d3.select(el).append('svg').attr('width','100%').attr('viewBox',`0 0 ${width} ${height}`);
+  const x=d3.scaleLinear().domain([0,100]).range([margin.left,width-margin.right]);
+  const y=d3.scaleBand().domain(data.map(d=>d[0])).range([margin.top,height-margin.bottom]).padding(.22);
+  svg.append('g').attr('transform',`translate(0,${height-margin.bottom})`).call(d3.axisBottom(x).ticks(5).tickFormat(d=>d+'%')).call(g=>g.select('.domain').attr('stroke','#d1d5db'));
+  svg.append('g').attr('transform',`translate(${margin.left},0)`).call(d3.axisLeft(y).tickSize(0)).call(g=>g.select('.domain').remove()).call(g=>g.selectAll('text').attr('fill','#4b5563').attr('font-size',10));
+  svg.selectAll('.bar').data(data).join('rect')
+    .attr('x',x(0)).attr('y',d=>y(d[0])).attr('width',d=>x(d[1])-x(0)).attr('height',y.bandwidth())
+    .attr('rx',5).attr('fill','#2563eb');
+  svg.selectAll('.val').data(data).join('text').attr('x',d=>x(d[1])+6).attr('y',d=>y(d[0])+y.bandwidth()/2+4)
+    .text(d=>d[1].toFixed(1)+'%').attr('font-size',10).attr('font-weight',600).attr('fill','#111827');
+}
+
+function descargarResumenCSV(){
+  const r=ultimoResultado;
+  const filas=[
+    ['Indicador','Valor'],
+    ['Precio estimado hoy',r.base!=null?Math.round(r.base):''],
+    ['Intervalo inferior',r.low!=null?Math.round(r.low):''],
+    ['Intervalo superior',r.high!=null?Math.round(r.high):''],
+    ['Plusvalía anual',r.plusvalia!=null?Math.round(r.plusvalia):''],
+    ['Precio proyectado',r.futuro!=null?Math.round(r.futuro):''],
+    ['Tasa anual zona',r.tasa!=null?(r.tasa*100).toFixed(2)+'%':''],
+    ['Zona metropolitana',r.zm||''],
+    ['Tipo de propiedad',r.tipo||''],
+    ['Superficie cubierta m2',r.sc??''],
+    ['Superficie total m2',r.st??''],
+    ['Comercios 500m',r.comercio??''],
+    ['Escolaridad AGEB',r.esc??''],
+    ['Latitud',r.lat??''],
+    ['Longitud',r.lon??'']
+  ];
+  const csv=filas.map(row=>row.map(v=>`"${String(v).replaceAll('"','""')}"`).join(',')).join('\n');
+  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='resumen_valuacion_vivienda.csv';a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+
+// Captura el mapa Leaflet combinando los canvas de tiles con el canvas SVG de marcadores
+function capturarMapaLeaflet(mapContainerId){
+  return new Promise(resolve=>{
+    const container=document.getElementById(mapContainerId);
+    if(!container){ resolve(null); return; }
+    const w=container.offsetWidth||600, h=container.offsetHeight||320;
+    const out=document.createElement('canvas');
+    out.width=w; out.height=h;
+    const ctx=out.getContext('2d');
+    ctx.fillStyle='#e8e8e8';
+    ctx.fillRect(0,0,w,h);
+    // 1) Dibujar cada tile canvas (fondo del mapa)
+    const tileCanvases=container.querySelectorAll('.leaflet-tile-pane canvas, canvas.leaflet-tile');
+    tileCanvases.forEach(tc=>{
+      try{
+        const r=tc.getBoundingClientRect(), cr=container.getBoundingClientRect();
+        ctx.drawImage(tc, r.left-cr.left, r.top-cr.top, r.width, r.height);
+      }catch(e){}
+    });
+    // 2) Dibujar la capa de marcadores (SVG overlay)
+    const svgEl=container.querySelector('.leaflet-overlay-pane svg');
+    if(svgEl){
+      try{
+        const svgStr=new XMLSerializer().serializeToString(svgEl);
+        const img=new Image();
+        img.onload=()=>{
+          const r=svgEl.getBoundingClientRect(), cr=container.getBoundingClientRect();
+          ctx.drawImage(img, r.left-cr.left, r.top-cr.top, r.width, r.height);
+          resolve(out.toDataURL('image/png'));
+        };
+        img.onerror=()=>resolve(out.toDataURL('image/png'));
+        img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svgStr);
+        return;
+      }catch(e){}
+    }
+    resolve(out.toDataURL('image/png'));
+  });
+}
+
+async function descargarPDF(){
+  if(typeof html2canvas==='undefined' || typeof window.jspdf==='undefined'){
+    alert('No se pudieron cargar las librerías necesarias para generar el PDF. Verifica tu conexión a internet.');
+    return;
+  }
+  actualizarReporte(); renderReporteZM();
+
+  const {jsPDF}=window.jspdf;
+  const pdf=new jsPDF('p','mm','a4');
+  const pageW=210, pageH=297, margin=8;
+  const imgW=pageW-margin*2;
+
+  // --- Página 1: Reporte ejecutivo (sin el mapa inline para evitar error CORS) ---
+  const mapEl=document.getElementById('ubicacion-map');
+  const mapParent=mapEl?mapEl.parentElement:null;
+  // Ocultar temporalmente el div del mapa para que html2canvas no falle
+  if(mapEl) mapEl.style.visibility='hidden';
+
+  const root=document.getElementById('report-content');
+  const canvas=await html2canvas(root,{scale:2,useCORS:true,allowTaint:true,backgroundColor:'#f6f7f9',logging:false});
+
+  if(mapEl) mapEl.style.visibility='visible';
+
+  const pagePixelH=Math.floor(canvas.width*(pageH-margin*2)/imgW);
+  let sourceY=0;
+  let firstPage=true;
+  while(sourceY<canvas.height){
+    if(!firstPage) pdf.addPage();
+    firstPage=false;
+    const sliceH=Math.min(pagePixelH,canvas.height-sourceY);
+    const slice=document.createElement('canvas');
+    slice.width=canvas.width; slice.height=sliceH;
+    slice.getContext('2d').drawImage(canvas,0,sourceY,canvas.width,sliceH,0,0,canvas.width,sliceH);
+    const sliceMM=sliceH*imgW/canvas.width;
+    pdf.addImage(slice.toDataURL('image/png'),'PNG',margin,margin,imgW,sliceMM);
+    sourceY+=sliceH;
+  }
+
+  // --- Página extra: Mapa de ubicación ---
+  const r=ultimoResultado;
+  if(r.lat!=null && r.lon!=null){
+    pdf.addPage();
+    // Título
+    pdf.setFont('helvetica','bold');
+    pdf.setFontSize(13);
+    pdf.setTextColor(17,24,39);
+    pdf.text('Ubicación evaluada',margin,margin+6);
+
+    // Coordenadas y zona
+    pdf.setFont('helvetica','normal');
+    pdf.setFontSize(10);
+    pdf.setTextColor(107,114,128);
+    pdf.text('Latitud: '+r.lat.toFixed(6)+'°   Longitud: '+r.lon.toFixed(6)+'°   Zona: '+r.zm, margin, margin+13);
+
+    // Intentar capturar el canvas del mapa Leaflet
+    const mapImgData=await capturarMapaLeaflet('ubicacion-map');
+    if(mapImgData){
+      const mapH=90; // alto en mm
+      pdf.addImage(mapImgData,'PNG',margin,margin+18,imgW,mapH);
+      // Marco
+      pdf.setDrawColor(200,200,200);
+      pdf.rect(margin,margin+18,imgW,mapH);
+    }
+
+    // Nota al pie
+    pdf.setFontSize(8);
+    pdf.setTextColor(156,163,175);
+    pdf.text('Mapa generado a partir del AVM. El marcador indica las coordenadas ingresadas. Radio de 500 m mostrado como referencia.',
+      margin, margin+18+(mapImgData?92:4));
+  }
+
+  const nombre='reporte_valuacion_'+new Date().toISOString().slice(0,10)+'.pdf';
+  pdf.save(nombre);
+}
+
+</script>
+
+</body>
+</html>
